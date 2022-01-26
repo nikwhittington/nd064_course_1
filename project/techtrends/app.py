@@ -1,14 +1,22 @@
 import sqlite3
 import logging
+import sys
 
 from flask import Flask, jsonify, json, render_template, request, url_for, redirect, flash
 from werkzeug.exceptions import abort
 
+logger = logging.getLogger('stinout')
 logging.basicConfig(
     format='%(asctime)s %(levelname)-8s %(message)s',
-    level=logging.INFO,
-    filename='app.log',
+    level=logging.DEBUG,
+    #filename='app.log',
     datefmt='%Y-%m-%d %H:%M:%S')
+handler1 = logging.StreamHandler(sys.stdout)
+handler1.setLevel(logging.DEBUG)
+handler2 = logging.StreamHandler(sys.stderr)
+handler2.setLevel(logging.ERROR)
+logger.addHandler(handler1)
+logger.addHandler(handler2)
 
 db_conn_count = 0
 # Function to get a database connection.
@@ -25,11 +33,7 @@ def get_post(post_id):
     connection = get_db_connection()
     post = connection.execute('SELECT * FROM posts WHERE id = ?',
                         (post_id,)).fetchone()
-    title_value = connection.execute('SELECT title FROM posts WHERE id = ?',
-                        (post_id,)).fetchone()
     connection.close()
-    for row in title_value:
-        app.logger.info('Article {} retrieved!'.format(row))
     return post
 
 # Define the Flask application
@@ -78,6 +82,12 @@ def post(post_id):
       app.logger.info("Article not retrieved and 404 generated.")
       return render_template('404.html'), 404
     else:
+      connection = get_db_connection()
+      title_value = connection.execute('SELECT title FROM posts WHERE id = ?',
+                        (post_id,)).fetchone()
+      connection.close()
+      for row in title_value:
+        app.logger.info('Article {} retrieved!'.format(row))
       return render_template('post.html', post=post)
 
 # Define the About Us page
